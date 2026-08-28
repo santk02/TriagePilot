@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      TRIAGEPILOT_THRESHOLD: "0.72"
+      TRIAGEPILOT_SAMPLE_COUNT: "5"
+

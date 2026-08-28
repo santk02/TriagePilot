@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TriagePilot</title>
+  <style>
+    :root { color-scheme: light; font-family: Georgia, serif; background: #f5f1e8; color: #1c2520; }
+    body { max-width: 1080px; margin: 0 auto; padding: 32px 20px; }
+    header { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; border-bottom: 2px solid #1c2520; }
+    h1 { font-size: clamp(2rem, 6vw, 4rem); margin: 0 0 12px; letter-spacing: 0; }
+    .eyebrow { font: 700 0.75rem/1.2 sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #b64d35; }
+    form, .panel { background: #fffdf8; border: 1px solid #b9b3a6; padding: 20px; margin-top: 24px; }
+    textarea { width: 100%; min-height: 120px; box-sizing: border-box; padding: 12px; border: 1px solid #77766f; background: #fffdf8; font: 1rem Georgia, serif; }
+    button { margin-top: 12px; padding: 11px 16px; border: 0; background: #1c2520; color: white; font: 700 0.85rem sans-serif; cursor: pointer; }
+    button:hover { background: #b64d35; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .metric { border-left: 4px solid #b64d35; padding-left: 12px; }
+    .metric strong { display: block; font-size: 1.5rem; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .error { color: #a22819; }
+  </style>
+</head>
+<body>
+  <header><div><div class="eyebrow">Confidence-gated support triage</div><h1>TriagePilot</h1></div><div id="status">Ready</div></header>
+  <form id="triage-form"><label for="text">Incoming ticket</label><textarea id="text" required placeholder="Describe the customer's issue..."></textarea><button type="submit">Classify ticket</button></form>
+  <section class="panel" aria-live="polite"><div class="grid"><div class="metric"><span>Decision</span><strong id="decision">-</strong></div><div class="metric"><span>Confidence</span><strong id="confidence">-</strong></div><div class="metric"><span>Route</span><strong id="route">-</strong></div></div><button id="override" type="button" hidden>Record override</button><pre id="details"></pre></section>
+  <section class="panel"><h2>Human review queue</h2><button id="refresh" type="button">Refresh queue</button><pre id="queue">Loading...</pre></section>
+  <script>
+    const el = id => document.getElementById(id);
+    async function refreshQueue() { const response = await fetch('/v1/queue'); el('queue').textContent = JSON.stringify(await response.json(), null, 2); }
+    el('triage-form').addEventListener('submit', async event => {
+      event.preventDefault(); el('status').textContent = 'Classifying...';
+      try {
+        const response = await fetch('/v1/triage', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket_id: `dashboard-${Date.now()}`, text: el('text').value}) });
+        const result = await response.json();
+        el('decision').textContent = result.action; el('confidence').textContent = Number(result.confidence).toFixed(3); el('route').textContent = result.route; el('details').textContent = JSON.stringify(result, null, 2); el('override').hidden = false; el('override').onclick = async () => { const correctedUrgency = prompt('Correct urgency (P1-P4):', result.urgency); const correctedIntent = prompt('Correct intent:', result.intent); if (!correctedUrgency || !correctedIntent) return; await fetch('/v1/corrections', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket_id: result.ticket_id, predicted_urgency: result.urgency, predicted_intent: result.intent, corrected_urgency: correctedUrgency, corrected_intent: correctedIntent, confidence: result.confidence})}); el('status').textContent = 'Override recorded'; }; el('status').textContent = 'Complete'; await refreshQueue();
+      } catch (error) { el('status').textContent = 'Error'; el('details').textContent = error.message; el('details').className = 'error'; }
+    });
+    el('refresh').addEventListener('click', refreshQueue); refreshQueue();
+  </script>
+</body>
+</html>
