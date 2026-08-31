@@ -6,4 +6,10 @@ services:
     environment:
       TRIAGEPILOT_THRESHOLD: "0.72"
       TRIAGEPILOT_SAMPLE_COUNT: "5"
+      TRIAGEPILOT_CORRECTIONS_PATH: "/app/data/corrections.jsonl"
+    volumes:
+      - triagepilot-data:/app/data  # persist the human-correction log across container restarts
+
+volumes:
+  triagepilot-data:
 

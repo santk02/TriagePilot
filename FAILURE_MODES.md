@@ -14,7 +14,8 @@
 
 ## What to watch
 
-- High-confidence overrides in the correction log
+- High-confidence overrides in the correction log (`GET /v1/corrections/export`, or `data/corrections.jsonl` directly) — if overrides cluster in the high-confidence bucket, calibration is broken
 - P1 tickets that are not routed to an urgent path
 - Calibration drift between the calibration split and held-out test results
+- Per-stage latency in `GET /v1/traces` — a slow `context.live_docs` stage usually means a live-docs source stopped responding within the TTL window
 

@@ -1,13 +1,16 @@
-from __future__ import annotations
+from __future__ import annotations  # allow forward-referenced type hints on older Python
 
-from dataclasses import dataclass
-from typing import Dict
+from dataclasses import dataclass  # small typed view of a routing decision
+from typing import Dict  # type hint for to_dict()
 
-from ..models import ClassificationResult
+from ..models import ClassificationResult  # the prediction this module gates
 
 
 @dataclass(frozen=True)
 class RouteDecision:
+    """Standalone (non-ClassificationResult) view of a routing outcome, for callers that only
+    need the decision fields rather than the full prediction."""
+
     action: str
     route: str
     confidence: float
@@ -29,6 +32,12 @@ def route_prediction(
     threshold: float,
     human_queue: str = "human-queue",
 ) -> ClassificationResult:
+    """The confidence gate: this is the whole product (see blueprint's design rule).
+
+    At or above `threshold`, auto-route to the predicted queue. Below it, abstain and send to the
+    human queue instead — carrying the top-2 guesses so the human starts from a shortlist rather
+    than nothing. Returns a NEW `ClassificationResult` with the routing fields resolved.
+    """
     action = "auto-route" if prediction.confidence >= threshold else "human-review"
     route = prediction.route if action == "auto-route" else human_queue
     reason = (
