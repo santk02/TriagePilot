@@ -29,3 +29,10 @@ The CI gate runs unit tests, dependency-free DeepEval-compatible assertions, and
 the split-aware evaluation command. Unsafe routing and low-confidence
 abstention failures fail the build.
 
+`evaluation/deepeval_tests.py` wraps its assertions in a `unittest.TestCase`
+(`DeepEvalAssertions`) so `python -m unittest evaluation.deepeval_tests`
+actually discovers and runs them — a bare `test_*` function is invisible to
+`unittest`'s module discovery, which meant these safety checks previously
+reported "Ran 0 tests" and never executed. Confirm any future edit to this
+file still shows a non-zero test count when run directly.
+
