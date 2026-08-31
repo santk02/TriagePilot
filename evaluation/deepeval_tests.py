@@ -1,14 +1,18 @@
-from __future__ import annotations
+from __future__ import annotations  # allow forward-referenced type hints on older Python
 
-from app.classify.paper_method import classify_with_confidence
-from app.classify.router import route_prediction
-from app.models import ClassificationResult, TicketInput
-from app.taxonomy import route_for
+import unittest  # wraps the assertions in a TestCase so `python -m unittest` actually discovers them
+
+from app.classify.paper_method import classify_with_confidence  # the confidence-scored classifier
+from app.classify.router import route_prediction  # the threshold gate under test
+from app.models import ClassificationResult  # the routed-decision DTO under test
+from app.taxonomy import route_for  # expected-route lookup for the fixed-prediction assertion
 
 
 def assert_p1_is_safe(
     text: str = "The service is down and returning 503 errors.",
 ) -> None:
+    """Safety assertion: an obvious outage ticket must classify as P1, and — auto-routed or
+    abstained — must never resolve to anything other than the SRE on-call path or a human."""
     result = classify_with_confidence(text)
     prediction = ClassificationResult(
         ticket_id="p1-check",
@@ -26,6 +30,8 @@ def assert_p1_is_safe(
 
 
 def assert_low_confidence_abstains() -> None:
+    """Safety assertion: a prediction below the threshold must abstain to human review, never
+    auto-route on a guess."""
     prediction = ClassificationResult(
         ticket_id="low-confidence",
         urgency="P4",
@@ -39,7 +45,22 @@ def assert_low_confidence_abstains() -> None:
     assert routed.action == "human-review"
 
 
-def test_deepeval_assertions() -> None:
-    """Dependency-free CI entry point; DeepEval can wrap these assertions later."""
-    assert_p1_is_safe()
-    assert_low_confidence_abstains()
+class DeepEvalAssertions(unittest.TestCase):
+    """CI safety gate, dependency-free but DeepEval-compatible: a real DeepEval suite can wrap
+    these same assertions as `GEval`/custom metrics without changing the logic under test.
+
+    NOTE (audit fix): this MUST be a `unittest.TestCase` — CI invokes
+    `python -m unittest evaluation.deepeval_tests`, and unittest's module discovery only finds
+    `TestCase` subclasses. A bare `test_*` function here is silently skipped ("Ran 0 tests"),
+    which meant these safety assertions were never actually executed by CI before this fix.
+    """
+
+    def test_p1_is_safe(self) -> None:
+        assert_p1_is_safe()
+
+    def test_low_confidence_abstains(self) -> None:
+        assert_low_confidence_abstains()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    unittest.main()

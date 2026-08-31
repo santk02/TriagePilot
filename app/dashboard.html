@@ -26,18 +26,21 @@
   <form id="triage-form"><label for="text">Incoming ticket</label><textarea id="text" required placeholder="Describe the customer's issue..."></textarea><button type="submit">Classify ticket</button></form>
   <section class="panel" aria-live="polite"><div class="grid"><div class="metric"><span>Decision</span><strong id="decision">-</strong></div><div class="metric"><span>Confidence</span><strong id="confidence">-</strong></div><div class="metric"><span>Route</span><strong id="route">-</strong></div></div><button id="override" type="button" hidden>Record override</button><pre id="details"></pre></section>
   <section class="panel"><h2>Human review queue</h2><button id="refresh" type="button">Refresh queue</button><pre id="queue">Loading...</pre></section>
+  <section class="panel"><h2>Pipeline traces</h2><button id="refresh-traces" type="button">Refresh traces</button><pre id="traces">Loading...</pre></section>
   <script>
     const el = id => document.getElementById(id);
     async function refreshQueue() { const response = await fetch('/v1/queue'); el('queue').textContent = JSON.stringify(await response.json(), null, 2); }
+    async function refreshTraces() { const response = await fetch('/v1/traces'); el('traces').textContent = JSON.stringify(await response.json(), null, 2); }
     el('triage-form').addEventListener('submit', async event => {
       event.preventDefault(); el('status').textContent = 'Classifying...';
       try {
         const response = await fetch('/v1/triage', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket_id: `dashboard-${Date.now()}`, text: el('text').value}) });
         const result = await response.json();
-        el('decision').textContent = result.action; el('confidence').textContent = Number(result.confidence).toFixed(3); el('route').textContent = result.route; el('details').textContent = JSON.stringify(result, null, 2); el('override').hidden = false; el('override').onclick = async () => { const correctedUrgency = prompt('Correct urgency (P1-P4):', result.urgency); const correctedIntent = prompt('Correct intent:', result.intent); if (!correctedUrgency || !correctedIntent) return; await fetch('/v1/corrections', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket_id: result.ticket_id, predicted_urgency: result.urgency, predicted_intent: result.intent, corrected_urgency: correctedUrgency, corrected_intent: correctedIntent, confidence: result.confidence})}); el('status').textContent = 'Override recorded'; }; el('status').textContent = 'Complete'; await refreshQueue();
+        el('decision').textContent = result.action; el('confidence').textContent = Number(result.confidence).toFixed(3); el('route').textContent = result.route; el('details').textContent = JSON.stringify(result, null, 2); el('override').hidden = false; el('override').onclick = async () => { const correctedUrgency = prompt('Correct urgency (P1-P4):', result.urgency); const correctedIntent = prompt('Correct intent:', result.intent); if (!correctedUrgency || !correctedIntent) return; await fetch('/v1/corrections', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ticket_id: result.ticket_id, predicted_urgency: result.urgency, predicted_intent: result.intent, corrected_urgency: correctedUrgency, corrected_intent: correctedIntent, confidence: result.confidence})}); el('status').textContent = 'Override recorded'; }; el('status').textContent = 'Complete'; await refreshQueue(); await refreshTraces();
       } catch (error) { el('status').textContent = 'Error'; el('details').textContent = error.message; el('details').className = 'error'; }
     });
     el('refresh').addEventListener('click', refreshQueue); refreshQueue();
+    el('refresh-traces').addEventListener('click', refreshTraces); refreshTraces();
   </script>
 </body>
 </html>
