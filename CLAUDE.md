@@ -59,6 +59,14 @@ CI (`.github/workflows/ci.yml`) runs the three test/eval commands above in that 
 - `evaluation/deepeval_tests.py` must stay a `unittest.TestCase`; a bare `test_*` function runs 0 tests under `python -m unittest` and silently disables the gate.
 - Don't present synthetic data from `scripts/build_dataset.py` as hand-labelled evaluation data.
 
+## More rules
+
+Path-scoped rules in `.claude/rules/` load when you work on matching files:
+- `testing.md`: unittest conventions, the CI safety gate, test isolation, determinism
+- `evaluation.md`: split discipline, metrics, baseline comparisons, data honesty
+
+Personal, machine-specific notes go in `CLAUDE.local.md` (gitignored).
+
 ## Git
 
 Develop on the branch you're assigned; commits end with the session's `Co-Authored-By`/`Claude-Session` trailers. Don't open a PR unless asked.
