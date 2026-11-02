@@ -1,9 +1,8 @@
 from __future__ import annotations  # allow forward-referenced type hints on older Python
 
 import json  # JSONL (one JSON object per line) is the on-disk correction log format
-from dataclasses import asdict  # (unused directly here, kept for parity with CorrectionRecord.to_dict)
 from pathlib import Path  # filesystem path handling for the log file
-from typing import Iterable, List  # type hints
+from typing import List  # type hints
 
 from ..models import CorrectionRecord  # the record shape being persisted
 

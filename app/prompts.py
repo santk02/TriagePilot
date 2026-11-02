@@ -1,6 +1,6 @@
 from __future__ import annotations  # allow forward-referenced type hints on older Python
 
-from typing import Iterable, Sequence  # type hints for chunk-joining helpers
+from typing import Sequence  # type hints for chunk-joining helpers
 
 from .models import NormalizedTicket  # the unified ticket shape prompts are built from
 from .taxonomy import INTENT, URGENCY  # label definitions injected into the prompt text
