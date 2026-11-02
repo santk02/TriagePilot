@@ -1,6 +1,5 @@
 from __future__ import annotations  # allow forward-referenced type hints on older Python
 
-from pathlib import Path  # locate dashboard.html relative to this file
 from typing import Any, Dict  # request/response payload type hints
 
 from .api import TriageService  # pipeline orchestrator the HTTP layer delegates to
@@ -32,7 +31,6 @@ try:
     # FastAPI is an optional dependency at import time: the pure-Python pipeline (TriageService)
     # must stay importable/testable even in environments where FastAPI isn't installed.
     from fastapi import FastAPI, HTTPException
-    from fastapi.responses import HTMLResponse
 except Exception:  # pragma: no cover - optional dependency
     FastAPI = None
     HTTPException = Exception
@@ -54,11 +52,6 @@ def create_app():
     def health() -> Dict[str, str]:
         """Liveness probe for Docker/orchestrators."""
         return {"status": "ok"}
-
-    @app.get("/", response_class=HTMLResponse)
-    def dashboard() -> str:
-        """Serve the single-page HTML dashboard (no separate frontend build required)."""
-        return (Path(__file__).with_name("dashboard.html")).read_text(encoding="utf-8")
 
     @app.post("/v1/triage")
     def triage(payload: Dict[str, Any]) -> Dict[str, Any]:

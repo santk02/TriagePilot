@@ -1,8 +1,8 @@
 from __future__ import annotations  # allow forward-referenced type hints on older Python
 
-from collections import Counter, defaultdict  # tallying helpers for binning/label counts
+from collections import defaultdict  # tallying helpers for binning/label counts
 from dataclasses import dataclass  # typed per-label metric row
-from typing import Dict, Iterable, List, Sequence, Tuple  # shared type hints
+from typing import Dict, List, Sequence, Tuple  # shared type hints
 
 
 @dataclass(frozen=True)

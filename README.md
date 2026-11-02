@@ -43,9 +43,6 @@ slice instead of averaging good and bad decisions together.
 - **CI safety gate.** Dependency-free, DeepEval-compatible assertions that
   fail the build on unsafe routing (e.g. a P1 falling through the cracks)
   or on auto-routing below the confidence threshold.
-- **Dashboard.** A single-page HTML UI (`app/dashboard.html`) for
-  submitting tickets, viewing the decision, working the human-review queue,
-  recording overrides, and inspecting pipeline traces — no frontend build.
 
 ---
 
@@ -73,7 +70,6 @@ triagepilot/
 │   ├── models.py                 # shared DTOs (TicketInput, ClassificationResult, ...)
 │   ├── taxonomy.py                # canonical urgency/intent labels + routing map
 │   ├── prompts.py                 # LLM prompt construction (consumed by a real backend)
-│   ├── dashboard.html             # single-page UI served at `/`
 │   │
 │   ├── ingest/                    # any input -> one normalized text blob
 │   │   ├── text.py                # whitespace cleanup
@@ -141,9 +137,9 @@ cp .env.example .env           # then edit values as needed
 ```
 
 `requirements.txt` currently installs `fastapi`, `uvicorn`, and `pytest` —
-enough to run the API, the dashboard, and the test suite. `matplotlib` is
-optional: the eval scripts detect its absence and fall back to writing a
-plain-text dump of the plot data instead of a `.png` (see "Known Gaps").
+enough to run the API and the test suite. `matplotlib` is optional: the
+eval scripts detect its absence and fall back to writing a plain-text dump
+of the plot data instead of a `.png` (see "Known Gaps").
 
 ---
 
@@ -156,13 +152,15 @@ python -m unittest discover -s tests -v
 python -m unittest evaluation.deepeval_tests -v
 ```
 
-### Run the API + dashboard
+### Run the API
 
 ```bash
 uvicorn app.main:create_app --factory --reload
-# → dashboard at http://localhost:8000/
 # → health check at http://localhost:8000/health
 ```
+
+This is a headless JSON API — there is no bundled frontend. Point any HTTP
+client (curl, a frontend app, Postman) at the endpoints below.
 
 Or with Docker Compose (persists the correction log in a named volume):
 
@@ -360,7 +358,7 @@ stack lists. These are documented here (and in `PAPER_NOTES.md` /
 | Firecrawl live-docs | `LiveDocsClient` uses a plain `urlopen` fetch against placeholder URLs; the cache/TTL/context-building logic is production-shaped, only the fetcher needs swapping |
 | PostgreSQL storage | Corrections persist to a JSONL file (`data/corrections.jsonl`); tickets/predictions are not persisted beyond the in-memory human queue for the process lifetime |
 | Langfuse tracing | `MemoryTracer` records per-stage timing in-process, exposed via `GET /v1/traces`; not exported to an external tracing backend |
-| Open WebUI / dashboard | A dependency-free single-page HTML dashboard (`app/dashboard.html`) is included instead |
+| Open WebUI / dashboard | No frontend is included; this repo is a headless JSON API only — point Open WebUI, or any frontend, at the `/v1/*` endpoints |
 | 200+ hand-labelled tickets, 60/20/20 split, license documented | `evaluation/labelled_tickets.json` ships with 6 hand-written seed rows only; `scripts/build_dataset.py` can pad it with clearly-synthetic template rows, but this must not be reported as the hand-labelled evaluation set |
 | ~30 screenshot + ~20 voice-note tickets in the dataset | Not yet present; the dataset has no multimodal rows |
 | DeepEval library integration | `evaluation/deepeval_tests.py` provides dependency-free assertions with the same shape a DeepEval `GEval` metric would wrap |
@@ -392,7 +390,7 @@ stack lists. These are documented here (and in `PAPER_NOTES.md` /
   them — corrections lived only in an in-memory list (lost on restart) and
   no trace events were ever recorded. Both are now wired into
   `TriageService.triage()`/`record_correction()`, with a new
-  `GET /v1/traces` endpoint and a dashboard panel to view them.
+  `GET /v1/traces` endpoint exposing the trace events.
 - **Unused imports** (`route_prediction` in `evaluation/run_eval.py`,
   `TicketInput` in `evaluation/deepeval_tests.py`) removed.
 - **Verbose `model_name` derivation** in

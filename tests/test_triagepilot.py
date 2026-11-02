@@ -13,7 +13,7 @@ from app.context.live_docs import LiveDocsClient, MemoryCache
 from app.feedback.corrections import export_corrections, record_correction
 from app.ingest.normalise import normalise_ticket
 from app.models import CorrectionRecord, TicketInput
-from app.taxonomy import INTENT, ROUTING, URGENCY, route_for, validate_routing_map
+from app.taxonomy import INTENT, URGENCY, route_for, validate_routing_map
 
 
 class TriagePilotTests(unittest.TestCase):
